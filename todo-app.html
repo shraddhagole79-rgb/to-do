@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Todo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F7F7F4;
+    --surface: #FFFFFF;
+    --ink: #20211D;
+    --ink-soft: #66675F;
+    --line: #E4E3DD;
+    --accent: #4F7A63;
+    --accent-soft: #E7F0EA;
+    --high: #C2634A;
+    --medium: #C99A3C;
+    --low: #5E8C74;
+    --overdue: #B23A2E;
+    --radius: 10px;
+  }
+
+  [data-theme="dark"] {
+    --bg: #1B1C19;
+    --surface: #242521;
+    --ink: #EDEDE7;
+    --ink-soft: #9B9C93;
+    --line: #35362F;
+    --accent: #6FA588;
+    --accent-soft: #24352C;
+    --overdue: #E07A6B;
+  }
+
+  * { box-sizing: border-box; }
+
+  button {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    user-select: none;
+    transition: transform 0.1s ease, opacity 0.15s ease, border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+  }
+
+  button:active { transform: scale(0.96); }
+
+  body {
+    margin: 0;
+    font-family: 'Manrope', -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+    transition: background 0.2s ease, color 0.2s ease;
+  }
+
+  #root {
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    padding: 48px 20px 80px;
+  }
+
+  .app {
+    width: 100%;
+    max-width: 560px;
+  }
+
+  .app-header {
+    margin-bottom: 24px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .app-header h1 {
+    font-size: 26px;
+    font-weight: 800;
+    margin: 0 0 4px;
+    letter-spacing: -0.02em;
+  }
+
+  .app-header p {
+    margin: 0;
+    color: var(--ink-soft);
+    font-size: 14px;
+  }
+
+  .theme-toggle {
+    border: 1px solid var(--line);
+    background: var(--surface);
+    color: var(--ink-soft);
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: border-color 0.15s ease, color 0.15s ease;
+  }
+
+  .theme-toggle:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .overview {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 18px;
+  }
+
+  .stats-row {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+  }
+
+  .stats-row .count {
+    font-size: 34px;
+    font-weight: 800;
+    line-height: 1;
+  }
+
+  .stats-row .label {
+    font-size: 13px;
+    color: var(--ink-soft);
+  }
+
+  .overview-text {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 14px;
+    margin-top: 12px;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--ink-soft);
+  }
+
+  .legend-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .pie-chart {
+    width: 96px;
+    height: 96px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    position: relative;
+  }
+
+  .pie-chart::after {
+    content: "";
+    position: absolute;
+    inset: 20px;
+    background: var(--surface);
+    border-radius: 50%;
+    display: flex;
+  }
+
+  .pie-chart-empty {
+    border: 2px dashed var(--line);
+    background: none !important;
+  }
+
+  .search-wrap {
+    margin-bottom: 14px;
+  }
+
+  .search-input {
+    width: 100%;
+    padding: 11px 14px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--surface);
+    font-family: inherit;
+    font-size: 14px;
+    color: var(--ink);
+    outline: none;
+    transition: border-color 0.15s ease;
+  }
+
+  .search-input:focus {
+    border-color: var(--accent);
+  }
+
+  .search-input::placeholder {
+    color: #9A9B92;
+  }
+
+  form.add-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 18px;
+  }
+
+  .add-input {
+    flex: 1;
+    padding: 12px 14px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--surface);
+    font-family: inherit;
+    font-size: 15px;
+    color: var(--ink);
+    outline: none;
+    transition: border-color 0.15s ease;
+  }
+
+  .add-input:focus {
+    border-color: var(--accent);
+  }
+
+  .priority-select {
+    padding: 10px 12px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--surface);
+    font-family: inherit;
+    font-size: 14px;
+    color: var(--ink-soft);
+    outline: none;
+    cursor: pointer;
+    min-height: 44px;
+  }
+
+  .date-input {
+    padding: 10px 12px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--surface);
+    font-family: inherit;
+    font-size: 14px;
+    color: var(--ink-soft);
+    outline: none;
+    cursor: pointer;
+    min-height: 44px;
+  }
+
+  .add-btn {
+    padding: 12px 18px;
+    border: none;
+    border-radius: 8px;
+    background: var(--ink);
+    color: #fff;
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: opacity 0.12s ease, transform 0.08s ease, box-shadow 0.12s ease;
+    box-shadow: 0 2px 0 rgba(0,0,0,0.06);
+    min-height: 48px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .add-btn:hover { opacity: 0.95; transform: translateY(-1px); box-shadow: 0 6px 14px rgba(16,24,32,0.12); }
+  .add-btn:active { opacity: 0.9; transform: translateY(0); box-shadow: 0 2px 6px rgba(16,24,32,0.10); }
+
+  .filter-row {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 16px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .filter-btn {
+    border: none;
+    background: none;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--ink-soft);
+    padding: 10px 12px;
+    cursor: pointer;
+    position: relative;
+    top: 1px;
+    min-height: 44px;
+  }
+
+  .filter-btn.active {
+    color: var(--ink);
+    border-bottom: 2px solid var(--accent);
+  }
+
+  .clear-completed {
+    margin-left: auto;
+    border: none;
+    background: none;
+    font-family: inherit;
+    font-size: 12.5px;
+    color: var(--ink-soft);
+    padding: 8px 4px;
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  .clear-completed:hover { color: var(--high); }
+
+  ul.todo-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  li.todo-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 12px 12px;
+  }
+
+  .checkbox {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+    border: 1.5px solid var(--ink-soft);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    background: transparent;
+    transition: background 0.15s ease, border-color 0.15s ease;
+  }
+
+  .checkbox.checked {
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+
+  .checkbox svg {
+    width: 12px;
+    height: 12px;
+    opacity: 0;
+  }
+
+  .checkbox.checked svg { opacity: 1; }
+
+  .todo-main {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .todo-text {
+    font-size: 14.5px;
+    line-height: 1.4;
+    word-break: break-word;
+    cursor: text;
+  }
+
+  .todo-text.done {
+    color: var(--ink-soft);
+    text-decoration: line-through;
+  }
+
+  .edit-input {
+    width: 100%;
+    font-family: inherit;
+    font-size: 14.5px;
+    border: none;
+    border-bottom: 1px solid var(--accent);
+    background: transparent;
+    color: var(--ink);
+    outline: none;
+    padding: 0 0 2px;
+  }
+
+  .todo-meta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 4px;
+  }
+
+  .priority-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+  }
+
+  .priority-label {
+    font-size: 11px;
+    color: var(--ink-soft);
+  }
+
+  .due-badge {
+    font-size: 11px;
+    color: var(--ink-soft);
+    padding-left: 8px;
+    border-left: 1px solid var(--line);
+  }
+
+  .due-badge.overdue {
+    color: var(--overdue);
+    font-weight: 600;
+  }
+
+  .delete-btn {
+    border: none;
+    background: none;
+    color: var(--ink-soft);
+    cursor: pointer;
+    padding: 8px;
+    flex-shrink: 0;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s ease, color 0.15s ease, transform 0.08s ease;
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .delete-btn:hover {
+    background: #FBEAE5;
+    color: var(--high);
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 48px 16px;
+    color: var(--ink-soft);
+  }
+
+  .empty-state .glyph {
+    font-size: 28px;
+    margin-bottom: 8px;
+  }
+
+  .empty-state p {
+    margin: 0;
+    font-size: 14px;
+  }
+
+  @media (max-width: 420px) {
+    .app-header h1 { font-size: 22px; }
+    .stats-row .count { font-size: 28px; }
+    .overview { flex-direction: column; align-items: stretch; }
+    form.add-row { flex-direction: column; gap: 10px; }
+    .add-input { order: 1; width: 100%; }
+    .priority-select { order: 2; width: 100%; }
+    .date-input { order: 3; width: 100%; }
+    .add-btn { order: 4; width: 100%; }
+    .theme-toggle { width: 40px; height: 40px; }
+    .filter-btn { padding: 10px 8px; }
+    .delete-btn { min-width: 44px; min-height: 44px; }
+  }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+<script type="text/babel">
+const { useState, useEffect, useRef } = React;
+
+const STORAGE_KEY = "todo-app-items-v1";
+const THEME_KEY = "todo-app-theme-v1";
+const PRIORITY_COLORS = { high: "#C2634A", medium: "#C99A3C", low: "#5E8C74" };
+const PRIORITY_LABELS = { high: "High priority", medium: "Medium priority", low: "Low priority" };
+
+function loadTodos() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function loadTheme() {
+  try {
+    return localStorage.getItem(THEME_KEY) || "light";
+  } catch (e) {
+    return "light";
+  }
+}
+
+function isOverdue(todo) {
+  if (!todo.dueDate || todo.done) return false;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return new Date(todo.dueDate) < today;
+}
+
+function formatDue(dateStr) {
+  const d = new Date(dateStr);
+  return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+
+function PieChart({ segments }) {
+  const total = segments.reduce((sum, s) => sum + s.value, 0);
+  if (total === 0) {
+    return <div className="pie-chart pie-chart-empty" aria-hidden="true"></div>;
+  }
+  let cursor = 0;
+  const stops = segments
+    .filter(s => s.value > 0)
+    .map(s => {
+      const start = (cursor / total) * 360;
+      cursor += s.value;
+      const end = (cursor / total) * 360;
+      return `${s.color} ${start}deg ${end}deg`;
+    })
+    .join(", ");
+  return (
+    <div
+      className="pie-chart"
+      style={{ background: `conic-gradient(${stops})` }}
+      role="img"
+      aria-label="Task breakdown chart"
+    ></div>
+  );
+}
+
+function SunIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+      <circle cx="8" cy="8" r="3.2" stroke="currentColor" strokeWidth="1.3"/>
+      <path d="M8 1.2V2.6M8 13.4V14.8M14.8 8H13.4M2.6 8H1.2M12.7 3.3L11.7 4.3M4.3 11.7L3.3 12.7M12.7 12.7L11.7 11.7M4.3 4.3L3.3 3.3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+    </svg>
+  );
+}
+
+function MoonIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+      <path d="M13.5 9.5A6 6 0 116.5 2.5a5 5 0 007 7z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/>
+    </svg>
+  );
+}
+
+function CheckIcon() {
+  return (
+    <svg viewBox="0 0 16 16" fill="none">
+      <path d="M3 8.5L6.5 12L13 4.5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  );
+}
+
+function TrashIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+      <path d="M2.5 4H13.5M6 4V2.5H10V4M6.5 7V11M9.5 7V11M3.5 4L4 13H12L12.5 4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  );
+}
+
+function TodoItem({ todo, onToggle, onDelete, onEdit }) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(todo.text);
+  const inputRef = useRef(null);
+
+  useEffect(() => {
+    if (editing && inputRef.current) inputRef.current.focus();
+  }, [editing]);
+
+  const commit = () => {
+    const trimmed = draft.trim();
+    if (trimmed) {
+      onEdit(todo.id, trimmed);
+    } else {
+      setDraft(todo.text);
+    }
+    setEditing(false);
+  };
+
+  return (
+    <li className="todo-item">
+      <div
+        className={"checkbox" + (todo.done ? " checked" : "")}
+        onClick={() => onToggle(todo.id)}
+        role="checkbox"
+        aria-checked={todo.done}
+        tabIndex={0}
+      >
+        <CheckIcon />
+      </div>
+      <div className="todo-main">
+        {editing ? (
+          <input
+            ref={inputRef}
+            className="edit-input"
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onBlur={commit}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") commit();
+              if (e.key === "Escape") { setDraft(todo.text); setEditing(false); }
+            }}
+          />
+        ) : (
+          <div
+            className={"todo-text" + (todo.done ? " done" : "")}
+            onDoubleClick={() => setEditing(true)}
+            title="Double-click to edit"
+          >
+            {todo.text}
+          </div>
+        )}
+        <div className="todo-meta">
+          <span className="priority-dot" style={{ background: PRIORITY_COLORS[todo.priority] }}></span>
+          <span className="priority-label">{PRIORITY_LABELS[todo.priority]}</span>
+          {todo.dueDate && (
+            <span className={"due-badge" + (isOverdue(todo) ? " overdue" : "")}>
+              {isOverdue(todo) ? "Overdue · " : "Due "}{formatDue(todo.dueDate)}
+            </span>
+          )}
+        </div>
+      </div>
+      <button className="delete-btn" onClick={() => onDelete(todo.id)} aria-label="Delete task">
+        <TrashIcon />
+      </button>
+    </li>
+  );
+}
+
+function App() {
+  const [todos, setTodos] = useState(loadTodos);
+  const [text, setText] = useState("");
+  const [priority, setPriority] = useState("medium");
+  const [dueDate, setDueDate] = useState("");
+  const [filter, setFilter] = useState("all");
+  const [query, setQuery] = useState("");
+  const [theme, setTheme] = useState(loadTheme);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(todos));
+  }, [todos]);
+
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", theme);
+    localStorage.setItem(THEME_KEY, theme);
+  }, [theme]);
+
+  const addTodo = (e) => {
+    e.preventDefault();
+    const trimmed = text.trim();
+    if (!trimmed) return;
+    setTodos([{ id: Date.now(), text: trimmed, done: false, priority, dueDate: dueDate || null }, ...todos]);
+    setText("");
+    setDueDate("");
+  };
+
+  const toggleTodo = (id) => {
+    setTodos(todos.map(t => t.id === id ? { ...t, done: !t.done } : t));
+  };
+
+  const deleteTodo = (id) => {
+    setTodos(todos.filter(t => t.id !== id));
+  };
+
+  const editTodo = (id, newText) => {
+    setTodos(todos.map(t => t.id === id ? { ...t, text: newText } : t));
+  };
+
+  const clearCompleted = () => {
+    setTodos(todos.filter(t => !t.done));
+  };
+
+  const filtered = todos
+    .filter(t => filter === "all" ? true : filter === "active" ? !t.done : t.done)
+    .filter(t => t.text.toLowerCase().includes(query.trim().toLowerCase()));
+
+  const remaining = todos.filter(t => !t.done).length;
+  const hasCompleted = todos.some(t => t.done);
+  const completedCount = todos.length - remaining;
+  const chartSegments = [
+    { label: "Completed", color: "#B7B8AF", value: completedCount },
+    { label: "High priority", color: PRIORITY_COLORS.high, value: todos.filter(t => !t.done && t.priority === "high").length },
+    { label: "Medium priority", color: PRIORITY_COLORS.medium, value: todos.filter(t => !t.done && t.priority === "medium").length },
+    { label: "Low priority", color: PRIORITY_COLORS.low, value: todos.filter(t => !t.done && t.priority === "low").length },
+  ];
+
+  return (
+    <div className="app">
+      <div className="app-header">
+        <div>
+          <h1>Todo</h1>
+          <p>Keep track of what needs doing.</p>
+        </div>
+        <button
+          className="theme-toggle"
+          onClick={() => setTheme(theme === "light" ? "dark" : "light")}
+          aria-label="Toggle dark mode"
+        >
+          {theme === "light" ? <MoonIcon /> : <SunIcon />}
+        </button>
+      </div>
+
+      <div className="overview">
+        <PieChart segments={chartSegments} />
+        <div className="overview-text">
+          <div className="stats-row">
+            <span className="count">{remaining}</span>
+            <span className="label">task{remaining === 1 ? "" : "s"} remaining · {todos.length} total</span>
+          </div>
+          <div className="legend">
+            {chartSegments.map(s => (
+              <span className="legend-item" key={s.label}>
+                <span className="legend-dot" style={{ background: s.color }}></span>
+                {s.label} ({s.value})
+              </span>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="search-wrap">
+        <input
+          className="search-input"
+          type="text"
+          placeholder="Search tasks..."
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+        />
+      </div>
+
+      <form className="add-row" onSubmit={addTodo}>
+        <input
+          className="add-input"
+          type="text"
+          placeholder="Add a new task..."
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+        />
+        <select
+          className="priority-select"
+          value={priority}
+          onChange={(e) => setPriority(e.target.value)}
+          aria-label="Priority"
+        >
+          <option value="low">Low</option>
+          <option value="medium">Medium</option>
+          <option value="high">High</option>
+        </select>
+        <input
+          className="date-input"
+          type="date"
+          value={dueDate}
+          onChange={(e) => setDueDate(e.target.value)}
+          aria-label="Due date"
+        />
+        <button className="add-btn" type="submit">Add</button>
+      </form>
+
+      <div className="filter-row">
+        {["all", "active", "completed"].map(f => (
+          <button
+            key={f}
+            className={"filter-btn" + (filter === f ? " active" : "")}
+            onClick={() => setFilter(f)}
+          >
+            {f.charAt(0).toUpperCase() + f.slice(1)}
+          </button>
+        ))}
+        {hasCompleted && (
+          <button className="clear-completed" onClick={clearCompleted}>
+            Clear completed
+          </button>
+        )}
+      </div>
+
+      {filtered.length === 0 ? (
+        <div className="empty-state">
+          <div className="glyph">○</div>
+          <p>{todos.length === 0 ? "No tasks yet. Add one above." : "Nothing matches here."}</p>
+        </div>
+      ) : (
+        <ul className="todo-list">
+          {filtered.map(todo => (
+            <TodoItem
+              key={todo.id}
+              todo={todo}
+              onToggle={toggleTodo}
+              onDelete={deleteTodo}
+              onEdit={editTodo}
+            />
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>
